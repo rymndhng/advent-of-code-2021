@@ -37,6 +37,7 @@ fn part2(numbers: &Vec<i32>) {
     println!("Part 2: count: {:?}, elements: {:?}", state.0, state.1);
 }
 
+#[allow(dead_code)]
 pub fn main() -> std::io::Result<()> {
     let file = File::open("input/001.txt")?;
     let reader = BufReader::new(file);
