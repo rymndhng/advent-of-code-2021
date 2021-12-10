@@ -3,7 +3,7 @@
             [clojure.string :as str]
             [clojure.set :as set]))
 
-(def input (->> (io/file "input/008.txt")
+(def input (->> (io/file "input/008.example.txt")
                 (io/reader)
                 (line-seq)
                 (map (fn [s]
@@ -78,8 +78,56 @@
 ;; (solve "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab |
 ;; cdfeb fcadb cdfeb cdbaf")
 
-;; TODO:Imma brute force it!
+;; Imma brute force it!
 (def part-2 (apply + (map solve input)))
+
+
+;; TODO: this section doesn't quite work yet -- my brain doesn't compute
+(let [fives (map set ["cdfbe" "gcdfa" "fbcad"])
+      thing (apply set/intersection fives)
+      diff  (map #(set/difference % thing) fives)]
+  (frequencies (reduce concat diff))
+  thing
+  )
+
+(defn disjoint [a b]
+  (into (set/difference a b) (set/difference b a)))
+
+(defn find-common [a b c]
+  (let [a+b (disjoint (set a) (set b))
+        b+c (disjoint (set a) (set c))
+        a+c (disjoint (set a) (set c))
+        is-different (first (sort-by (comp - count) [a+b b+c a+c]))]
+    (condp = is-different
+      a+b [c [a b]]
+      b+c [a [b c]]
+      a+c [b [a c]])))
+
+(defn solve-2 [[signals outputs]]
+  (let [by-count (group-by count signals)
+        answers  {(-> (get by-count 2) first) 1
+                  (-> (get by-count 3) first) 7
+                  (-> (get by-count 4) first) 4
+                  (-> (get by-count 7) first) 8}
+
+        [three two-and-five]  (apply find-common (get by-count 5))
+        [nine & zero-and-six] (sort-by #(count (disjoint (set three) (set %))) (get by-count 6))
+        [five two]            (sort-by #(count (disjoint (set nine) (set %))) two-and-five)
+        [six zero]            (sort-by #(count (disjoint (set five) (set %))) zero-and-six)
+        answers               (assoc answers
+                                     three                       3
+                                     nine                        9
+                                     two                         2
+                                     five                        5
+                                     six                         6
+                                     zero                        0)
+        answers-set           (into {} (map (fn [[k v]] (vector (set k) v)) answers))]
+    (reduce #(+ (* 10 %1) (get answers-set (set %2))) 0 outputs)))
+
+(def part-2-again (map solve-2 input))
+
+(solve-2 [["acedgfb" "cdfbe" "gcdfa" "fbcad" "dab" "cefabd" "cdfgeb" "eafb" "cagedb" "ab"] ["cdfeb" "fcadb" "cdfeb" "cdbaf"]])
+
 
 ;; (defn narrow-by-rules [state pattern]
 ;;   (let [pat-count (count pattern)]
